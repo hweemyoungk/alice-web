@@ -1,0 +1,568 @@
+openapi: 3.1.0
+info:
+  version: '1.0.0'
+  title: Alice API
+  license:
+    name: GNU GPLv3
+    url: 'https://www.gnu.org/licenses/gpl.txt'
+  contact:
+    name: Carol Admin
+    url: 'mailto:admin@carol.cards'
+  description: >-
+    This documents describes API specifications of Alice, the backend of Carol Cards.(<a href="https://play.google.com/store/apps/details?id=cards.carol">Google Play Store</a>)<br>
+    Please keep in mind that:<br>
+    <ul>Not all APIs are reflected in the documentation currently.</ul>
+    <ul>Documentation is being augmented and/or fixed irregularly.</ul>
+
+servers:
+  - url: 'https://carol.cards'
+    description: Carol Cards Domain
+tags:
+  - name: Customer Service
+    description: Supports backend operations called by Customer in Carol Cards.
+  - name: Owner Service
+    description: Supports backend operations called by Owner in Carol Cards.
+security:
+  - bearerAuth: []
+paths:
+  /customer/api/v1/card:
+    post:
+      summary: Create New Card
+      description: Creates a new Card provided in the request body.
+      operationId: createCardV1
+      tags:
+        - Customer Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Card'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: Reference to created card
+              schema:
+                type: string
+                format: uri
+        '400':
+          description: Bad Request
+  '/customer/api/v1/card/{cardId}':
+    get:
+      summary: Get Card by ID
+      description: Gets Card by card ID.
+      operationId: getCardById
+      tags:
+        - Customer Service
+      parameters:
+        - $ref: '#/components/parameters/CardIdInPath'
+      responses:
+        '200':
+          description: Get card by id response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '404':
+          description: Not Found
+    put:
+      summary: Update Card by ID
+      description: Overwrites every property of Card by ID with details provided in the request body.
+      operationId: updateCardByIdV1
+      tags:
+        - Customer Service
+      parameters:
+        - $ref: '#/components/parameters/CardIdInPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Card'
+      responses:
+        '204':
+          description: Card Updated
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+    delete:
+      summary: Discard Card by ID
+      description: Sets property `isDiscarded` of Card by ID to `true`. Cascade operations would follow if any.
+      operationId: discardCardByIdV1
+      tags:
+        - Customer Service
+      parameters:
+        - $ref: '#/components/parameters/CardIdInPath'
+      responses:
+        '204':
+          description: Card Discarded
+        '404':
+          description: Not Found
+  '/customer/api/v1/card/list':
+    get:
+      description: >-
+        Lists Cards that matches all provided query parameters.
+        At least one of query parameters must be provided.
+        Returns empty array if none found.
+      summary: List Cards
+      operationId: listCards
+      tags:
+        - Customer Service
+      parameters:
+        - name: customerId
+          in: query
+          description: Customer ID
+          required: false
+          type: string
+          format: uuid
+          example: 8c36ce02-4fcd-46db-9d5b-7db5d3aff862
+        - name: id
+          in: query
+          description: Card ID(s)
+          required: false
+          type: array
+          items:
+            type: integer
+            format: int64
+          collectionFormat: multi
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+        '400':
+          description: Invalid Query Parameters
+  '/owner/api/v1/store':
+    post:
+      summary: Create New Store
+      description: Creates a new Store provided in the request body.
+      operationId: createStoreV1
+      tags:
+        - Owner Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Store'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: Reference to created store
+              schema:
+                type: string
+                format: uri
+        '400':
+          description: Bad Request
+  '/owner/api/v1/store/{storeId}':
+    get:
+      summary: Get Store by ID
+      description: Gets Store by card ID.
+      operationId: getStoreById
+      tags:
+        - Owner Service
+      parameters:
+        - $ref: '#/components/parameters/StoreIdInPath'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Store'
+        '404':
+          description: Not Found
+    put:
+      summary: Update Store by ID
+      description: Overwrites every property of Store by ID with details provided in the request body.
+      operationId: updateStoreByIdV1
+      tags:
+        - Owner Service
+      parameters:
+        - $ref: '#/components/parameters/StoreIdInPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Store'
+      responses:
+        '204':
+          description: Store Updated
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+    delete:
+      summary: Close Store by ID
+      description: Sets property `isClosed` of Store by ID to `true`. Cascade operations would follow if any.
+      operationId: closeStoreByIdV1
+      tags:
+        - Owner Service
+      parameters:
+        - $ref: '#/components/parameters/StoreIdInPath'
+      responses:
+        '204':
+          description: Store Closed
+        '404':
+          description: Not Found
+  '/owner/api/v1/store/list':
+    get:
+      description: >-
+        Lists Stores that matches all provided query parameters.
+        At least one of query parameters must be provided.
+        Returns empty array if none found.
+      summary: List Stores
+      operationId: listStores
+      tags:
+        - Owner Service
+      parameters:
+        - name: ownerId
+          in: query
+          description: Customer ID
+          required: false
+          type: string
+          format: uuid
+          example: 8c36ce02-4fcd-46db-9d5b-7db5d3aff862
+        - name: id
+          in: query
+          description: Store ID(s)
+          required: false
+          type: array
+          items:
+            type: integer
+            format: int64
+          example: [1,2]
+          collectionFormat: multi
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Store'
+        '400':
+          description: Invalid Query Parameters
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: Bearer
+      bearerFormat: JWT
+  parameters:
+    CardIdInPath:
+      name: cardId
+      in: path
+      description: Card ID
+      required: true
+      schema:
+        type: integer
+        format: int64
+    StoreIdInPath:
+      name: storeId
+      in: path
+      description: Store ID
+      required: true
+      schema:
+        type: integer
+        format: int64
+  schemas:
+    BaseDto:
+      type: object
+      required:
+        - displayName
+        - isDeleted
+      properties:
+        displayName:
+          type: string
+          example: A Card Name
+          minLength: 1
+          maxLength: 30
+        createdDate:
+          type: integer
+          format: int32
+          description: Milliseconds since UNIX epoch
+          readOnly: true
+          example: 1704034800000
+        lastModifiedDate:
+          type: integer
+          format: int32
+          description: Milliseconds since UNIX epoch
+          readOnly: true
+          example: 1706713200000
+        isDeleted:
+          type: boolean
+          example: false
+    Card:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseDto'
+      required:
+        - isDiscarded
+        - isUsedOut
+        - isInactive
+        - numCollectedStamps
+        - numGoalStamps
+        - isFavorite
+        - numRedeemed
+        - customerId
+        - blueprintId
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 4
+        isDiscarded:
+          type: boolean
+          example: false
+        isUsedOut:
+          type: boolean
+          example: false
+        isInactive:
+          type: boolean
+          example: false
+        numCollectedStamps:
+          type: integer
+          format: int32
+          example: 5
+        numGoalStamps:
+          type: integer
+          format: int32
+          example: 8
+        expirationDate:
+          type: integer
+          format: int32
+          description: Milliseconds since UNIX epoch
+          readOnly: true
+          example: 1704034800000
+        isFavorite:
+          type: boolean
+          example: true
+        numRedeemed:
+          type: integer
+          format: int32
+          example: 1
+        bgImageId:
+          type: string
+          example: A1B2C3
+        customerId:
+          type: string
+          format: uuid
+          example: 8c36ce02-4fcd-46db-9d5b-7db5d3aff862
+        blueprint:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/Blueprint'
+        blueprintId:
+          type: integer
+          format: int64
+          example: 2
+    Blueprint:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseDto'
+      required:
+        - description
+        - stampGrantCondDescription
+        - numMaxStamps
+        - numMaxRedeems
+        - numMaxIssuesPerCustomer
+        - numMaxIssues
+        - expirationDate
+        - isPublishing
+        - storeId
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 2
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: This is description of a Blueprint.
+        stampGrantCondDescription:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: This is stamp grant condition description of a Blueprint.
+        numMaxStamps:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+          example: 10
+        numMaxRedeems:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+          example: 3
+        numMaxIssuesPerCustomer:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+          example: 1
+        numMaxIssues:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          example: 0
+        expirationDate:
+          type: integer
+          format: int32
+          description: Milliseconds since UNIX epoch
+          example: 1704034800000
+        bgImageId:
+          type: string
+          example: A1B2C3
+        isPublishing:
+          type: boolean
+          example: true
+        store:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/Store'
+        storeId:
+          type: integer
+          format: int64
+          example: 1
+        redeemRules:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/RedeemRule'
+          readOnly: true
+          example: null
+    Store:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseDto'
+      required:
+        - description
+        - isClosed
+        - isInactive
+        - ownerId
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 1
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: This is description of a Store.
+        isClosed:
+          type: boolean
+          example: false
+        isInactive:
+          type: boolean
+          example: false
+        zipcode:
+          type: string
+          maxLength: 7
+          example: 12345
+        address:
+          type: string
+          maxLength: 120
+          example: Baz Street 12, Bar City, Foo
+        phone:
+          type: string
+          maxLength: 15
+          example: +1-010-1234-5678
+        lat:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          example: 10.12345
+        lng:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          example: -5.09876
+        ownerId:
+          type: string
+          format: uuid
+          example: 8c36ce02-4fcd-46db-9d5b-7db5d3aff862
+        bgImageId:
+          type: string
+          example: A1B2C3
+        profileImageId:
+          type: string
+          example: A1B2C3
+        blueprints:
+          readOnly: true
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Blueprint'
+          example: null
+    RedeemRule:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseDto'
+      required:
+        - description
+        - isClosed
+        - isInactive
+        - ownerId
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 3
+        description:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: This is description of a RedeemRule.
+        consumes:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 5
+        imageId:
+          type: string
+          example: A1B2C3
+        blueprint:
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/Blueprint'
+        blueprintId:
+          type: integer
+          format: int64
+          example: 2
+
+#  requestBodies:
+#    OrderStatusCallback:
+#      description: Order Status Update
+#      content:
+#        application/json:
+#          schema:
+#            type: object
+#            properties:
+#              orderId:
+#                type: string
+#                format: uuid
+#              orderStatus:
+#                $ref: '#/components/schemas/OrderStatusUpdate'
