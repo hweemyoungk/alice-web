@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  version: '1.0.0'
+  version: '1.0.3'
   title: Alice API
   license:
     name: GNU GPLv3
@@ -11,9 +11,17 @@ info:
   description: >-
     This documents describes API specifications of Alice, the backend of Carol Cards.(<a href="https://play.google.com/store/apps/details?id=cards.carol">Google Play Store</a>)<br>
     Please keep in mind that:<br>
-    <ul>Not all APIs are reflected in the documentation currently.</ul>
-    <ul>Documentation is being augmented and/or fixed irregularly.</ul>
-
+    <ul>
+    <li>Not all APIs are reflected in the documentation currently.</li>
+    <li>Documentation is being augmented and/or fixed irregularly.</li>
+    </ul>
+    <h3>Patch Notes</h3>
+    <ul>
+    <li>[03/08/2024] v1.0.0: Initial release of Customer Service API spec.</li>
+    <li>[03/16/2024] v1.0.1: Initial release of Owner Service API spec.</li>
+    <li>[03/23/2024] v1.0.2: Initial release of App Service API spec.</li>
+    <li>[03/30/2024] v1.0.3: Enhanced descriptions for all schemas.</li>
+    </ul>
 servers:
   - url: 'https://carol.cards'
     description: Carol Cards Domain
@@ -22,6 +30,8 @@ tags:
     description: Supports backend operations called by Customer in Carol Cards.
   - name: Owner Service
     description: Supports backend operations called by Owner in Carol Cards.
+  - name: App Service
+    description: Supports backend operations called by Carol Cards internally.
 security:
   - bearerAuth: []
 paths:
@@ -233,7 +243,7 @@ paths:
           type: string
           format: uuid
           example: 8c36ce02-4fcd-46db-9d5b-7db5d3aff862
-        - name: id
+        - name: ids
           in: query
           description: Store ID(s)
           required: false
@@ -254,6 +264,75 @@ paths:
                   $ref: '#/components/schemas/Store'
         '400':
           description: Invalid Query Parameters
+  '/app/api/v1/public/minRequirements':
+    get:
+      description: >-
+        Returns minimum requirements for Carol Cards to proceed from launch.<br>
+        Currently returns <b>only</b> minimum version name.
+      summary: Get Minimum Requirements
+      operationId: getMinRequirements
+      tags:
+        - App Service
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  minVersionName:
+                    type: string
+                    example: 1.0.0
+  '/app/api/v1/public/appNotice/list/id':
+    get:
+      description: >-
+        Lists IDs of <code>AppNotice</code> available.<br>
+        Client can compare fetched IDs and IDs of notices in device to prevent overfetching of notices.
+      summary: List Application Notices ID
+      operationId: listAppNoticesId
+      tags:
+        - App Service
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: int64
+                  example: [ 1,2 ]
+  '/app/api/v1/public/appNotice/list':
+    get:
+      description: >-
+        Lists <code>AppNotice</code> that matches all provided query parameters.<br>
+        Lists all if no <code>ids</code> provided.
+      summary: List Application Notices
+      operationId: listAppNotices
+      tags:
+        - App Service
+      parameters:
+        - name: ids
+          in: query
+          description: <code>AppNotice</code> ID(s)
+          required: false
+          type: array
+          items:
+            type: integer
+            format: int64
+          example: [ 1,2 ]
+          collectionFormat: multi
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppNotice'
 components:
   securitySchemes:
     bearerAuth:
@@ -286,23 +365,25 @@ components:
       properties:
         displayName:
           type: string
-          example: A Card Name
           minLength: 1
           maxLength: 30
+          description: Name of this object to be displayed.
+          example: A Display Name
         createdDate:
           type: integer
           format: int32
-          description: Milliseconds since UNIX epoch
+          description: Milliseconds since UNIX epoch at which this object was created.
           readOnly: true
           example: 1704034800000
         lastModifiedDate:
           type: integer
           format: int32
-          description: Milliseconds since UNIX epoch
+          description: Milliseconds since UNIX epoch at which this object was modified lastly.
           readOnly: true
           example: 1706713200000
         isDeleted:
           type: boolean
+          description: Whether this object is soft-deleted or not.
           example: false
     Card:
       type: object
@@ -323,51 +404,65 @@ components:
           type: integer
           format: int64
           readOnly: true
+          description: Card ID
           example: 4
         isDiscarded:
           type: boolean
+          description: Whether this card was discarded by Customer.
           example: false
         isUsedOut:
           type: boolean
+          description: Whether this card once reached max number of redeem of its blueprint.
           example: false
         isInactive:
           type: boolean
+          description: Whether this card should be ignored in any business logics.
           example: false
         numCollectedStamps:
           type: integer
           format: int32
+          description: Number of stamps this card has collected and can be consumed instantly.
           example: 5
         numGoalStamps:
           type: integer
           format: int32
+          description: Number of stamps Customer has set as goal.
           example: 8
         expirationDate:
           type: integer
           format: int32
-          description: Milliseconds since UNIX epoch
+          description: >-
+            Milliseconds since UNIX epoch after which this card is inactive.<br>
+            Always up-to-date with its blueprint's expiration date.
           readOnly: true
           example: 1704034800000
         isFavorite:
           type: boolean
+          description: Whether set as favorite by Customer.
           example: true
         numRedeemed:
           type: integer
           format: int32
+          description: Number of approvals for redeem requests regarding this card.
           example: 1
         bgImageId:
           type: string
+          description: ID of image file to be used as background image for this card.
           example: A1B2C3
         customerId:
           type: string
           format: uuid
+          description: Card's Customer ID.
           example: 8c36ce02-4fcd-46db-9d5b-7db5d3aff862
         blueprint:
           readOnly: true
+          description: Blueprint of this card.
           allOf:
             - $ref: '#/components/schemas/Blueprint'
         blueprintId:
           type: integer
           format: int64
+          description: Blueprint ID of this card.
           example: 2
     Blueprint:
       type: object
@@ -388,59 +483,72 @@ components:
           type: integer
           format: int64
           readOnly: true
+          description: Blueprint ID
           example: 2
         description:
           type: string
           minLength: 1
           maxLength: 1000
+          description: Description of this blueprint provided by Owner.
           example: This is description of a Blueprint.
         stampGrantCondDescription:
           type: string
           minLength: 1
           maxLength: 1000
+          description: Description of stamp grant conditions provided by Owner.
           example: This is stamp grant condition description of a Blueprint.
         numMaxStamps:
           type: integer
           format: int32
           minimum: 1
           maximum: 100
+          description: Max number of collected stamps of every card associated to this blueprint.
           example: 10
         numMaxRedeems:
           type: integer
           format: int32
           minimum: 1
           maximum: 100
+          description: Max number of approvals for redeem requests regarding every card associated to this blueprint.
           example: 3
         numMaxIssuesPerCustomer:
           type: integer
           format: int32
           minimum: 1
           maximum: 100
+          description: Max number of issues per customer regarding every card associated to this blueprint.
           example: 1
         numMaxIssues:
           type: integer
           format: int32
           minimum: 0
           maximum: 100
+          description: >-
+            Max number of total issues of cards associated to this blueprint.<br>
+            <code>0</code> refers to <b>unlimited</b>.
           example: 0
         expirationDate:
           type: integer
           format: int32
-          description: Milliseconds since UNIX epoch
+          description: Milliseconds since UNIX epoch after which this blueprint and every card associated with this blueprint is inactive.
           example: 1704034800000
         bgImageId:
           type: string
+          description: ID of image file to be used as background image for this blueprint.
           example: A1B2C3
         isPublishing:
           type: boolean
+          description: Whether a card can be issued instantly.
           example: true
         store:
           readOnly: true
+          description: Blueprint's store.
           allOf:
             - $ref: '#/components/schemas/Store'
         storeId:
           type: integer
           format: int64
+          description: Blueprint's store ID.
           example: 1
         redeemRules:
           type: array
@@ -448,6 +556,7 @@ components:
             allOf:
               - $ref: '#/components/schemas/RedeemRule'
           readOnly: true
+          description: Blueprint's redeem rules.
           example: null
     Store:
       type: object
@@ -463,51 +572,63 @@ components:
           type: integer
           format: int64
           readOnly: true
+          description: Store ID
           example: 1
         description:
           type: string
           minLength: 1
           maxLength: 1000
+          description: Description of this store provided by Owner.
           example: This is description of a Store.
         isClosed:
           type: boolean
+          description: Whether this store was closed.
           example: false
         isInactive:
           type: boolean
+          description: Whether this store should be ignored in any business logics.
           example: false
         zipcode:
           type: string
           maxLength: 7
+          description: Zipcode of this store.
           example: 12345
         address:
           type: string
           maxLength: 120
+          description: Address of this store.
           example: Baz Street 12, Bar City, Foo
         phone:
           type: string
           maxLength: 15
+          description: Phone number of this store.
           example: +1-010-1234-5678
         lat:
           type: number
           format: double
           minimum: -90
           maximum: 90
+          description: Latitude of this store.
           example: 10.12345
         lng:
           type: number
           format: double
           minimum: -180
           maximum: 180
+          description: Longitude of this store.
           example: -5.09876
         ownerId:
           type: string
           format: uuid
+          description: Store's owner ID.
           example: 8c36ce02-4fcd-46db-9d5b-7db5d3aff862
         bgImageId:
           type: string
+          description: ID of image file to be used as background image for this store.
           example: A1B2C3
         profileImageId:
           type: string
+          description: ID of image file to be used as profile image for this store.
           example: A1B2C3
         blueprints:
           readOnly: true
@@ -515,6 +636,7 @@ components:
           items:
             allOf:
               - $ref: '#/components/schemas/Blueprint'
+          description: Store's blueprints.
           example: null
     RedeemRule:
       type: object
@@ -530,28 +652,82 @@ components:
           type: integer
           format: int64
           readOnly: true
+          description: Redeem rule ID
           example: 3
         description:
           type: string
           minLength: 1
           maxLength: 100
+          description: Description of this redeem rule provided by owner.
           example: This is description of a RedeemRule.
         consumes:
           type: integer
           format: int32
           minimum: 0
+          description: Number of card's stamps to be consumed when redeem request of this redeem rule is approved.
           example: 5
         imageId:
           type: string
+          description: ID of image file to be used as image for this redeem rule.
           example: A1B2C3
         blueprint:
           readOnly: true
+          description: Redeem rule's blueprint.
           allOf:
             - $ref: '#/components/schemas/Blueprint'
         blueprintId:
           type: integer
           format: int64
+          description: Redeem rule's blueprint ID.
           example: 2
+    AppNotice:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseDto'
+      required:
+        - priority
+        - description
+        - canSuppress
+        - isSuppressed
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          description: ID of notice.
+          example: 6
+        priority:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            Priority for notice to pop up in Carol Cards.<br>
+            The higher the priority is, the earlier notice pops up.<br>
+            Can be duplicate across notices.
+          example: 1
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: Body of notice.
+          example: This is description of a AppNotice.
+        canSuppress:
+          type: boolean
+          description: Whether this notice can be suppressed by client.
+          example: false
+        isSuppressed:
+          type: boolean
+          description: Whether this notice is suppressed.
+          example: false
+        expirationDate:
+          type: integer
+          format: int32
+          description: Milliseconds since UNIX epoch after which this notice shouldn't be fetched by server nor displayed in client.
+          example: 1704034800000
+        url:
+          type: String
+          description: Associated url where details of this notice can be found.
+          example: https://carol.cards/public/privacy-policy.html
 
 #  requestBodies:
 #    OrderStatusCallback:
