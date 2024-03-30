@@ -10,7 +10,7 @@
     </parent>
     <groupId>cards.alice</groupId>
     <artifactId>alice-web</artifactId>
-    <version>0.3.7</version>
+    <version>0.3.8</version>
     <name>alice-web</name>
     <description>alice-web</description>
     <properties>
