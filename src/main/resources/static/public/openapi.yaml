@@ -303,7 +303,7 @@ paths:
                 items:
                   type: integer
                   format: int64
-                  example: [ 1,2 ]
+                example: [ 1,2 ]
   '/app/api/v1/public/appNotice/list':
     get:
       description: >-
